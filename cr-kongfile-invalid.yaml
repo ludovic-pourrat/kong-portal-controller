@@ -1,0 +1,11 @@
+apiVersion: developer.konghq.com/v1
+kind: KongFile
+metadata:
+  name: my-kong-file-invalid
+  annotations:
+    developer.konghq.com/controller.class: kong
+spec:
+  path: test/test.txt
+  kind: CONTENT
+  content: |
+    Invalid test.

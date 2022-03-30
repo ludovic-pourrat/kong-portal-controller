@@ -1,0 +1,18 @@
+apiVersion: developer.konghq.com/v1
+kind: KongFile
+metadata:
+  name: my-kong-file
+  annotations:
+    developer.konghq.com/controller.class: kong
+spec:
+  layout: data.html
+  path: products
+  name: test.txt
+  title: test
+  kind: CONTENT
+  content: |
+    ### this is my file content !
+    
+    ## Yeah
+    
+    This is yeah.

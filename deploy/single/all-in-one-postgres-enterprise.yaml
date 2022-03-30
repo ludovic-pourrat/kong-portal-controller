@@ -1,0 +1,665 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kong
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: apis.developer.konghq.com
+spec:
+  group: developer.konghq.com
+  names:
+    kind: API
+    listKind: APIList
+    plural: apis
+    singular: api
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: API is the Schema for the apis API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: APISpec defines the desired state of API
+            properties:
+              foo:
+                description: Foo is an example field of API. Edit api_types.go to
+                  remove/update
+                type: string
+            type: object
+          status:
+            description: APIStatus defines the observed state of API
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: documentations.developer.konghq.com
+spec:
+  group: developer.konghq.com
+  names:
+    kind: Documentation
+    listKind: DocumentationList
+    plural: documentations
+    singular: documentation
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Documentation is the Schema for the documentations API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DocumentationSpec defines the desired state of Documentation
+            properties:
+              foo:
+                description: Foo is an example field of Documentation. Edit documentation_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: DocumentationStatus defines the observed state of Documentation
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: controller-manager
+  namespace: kong
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kong-serviceaccount
+  namespace: kong
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: leader-election-role
+  namespace: kong
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: kong-developer
+rules:
+- apiGroups:
+  - developer.konghq.com
+  resources:
+  - apis
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - developer.konghq.com
+  resources:
+  - apis/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - developer.konghq.com
+  resources:
+  - apis/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - developer.konghq.com
+  resources:
+  - documentations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - developer.konghq.com
+  resources:
+  - documentations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - developer.konghq.com
+  resources:
+  - documentations/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: leader-election-rolebinding
+  namespace: kong
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: kong
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: manager-role
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: kong
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: proxy-role
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: kong
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: controller-manager-metrics-service
+  namespace: kong
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-admin
+  namespace: kong
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin
+    port: 80
+    protocol: TCP
+    targetPort: 8001
+  selector:
+    app: ingress-kong
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-manager
+  namespace: kong
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: manager
+    port: 80
+    protocol: TCP
+    targetPort: 8002
+  selector:
+    app: ingress-kong
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+  name: kong-proxy
+  namespace: kong
+spec:
+  ports:
+  - name: proxy
+    port: 80
+    protocol: TCP
+    targetPort: 8000
+  - name: proxy-ssl
+    port: 443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    app: ingress-kong
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-validation-webhook
+  namespace: kong
+spec:
+  ports:
+  - name: webhook
+    port: 443
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: ingress-kong
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: kong
+spec:
+  ports:
+  - name: pgql
+    port: 5432
+    protocol: TCP
+    targetPort: 5432
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ingress-kong
+  name: ingress-kong
+  namespace: kong
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingress-kong
+  template:
+    metadata:
+      annotations:
+        kuma.io/gateway: enabled
+        traffic.sidecar.istio.io/includeInboundPorts: ""
+      labels:
+        app: ingress-kong
+    spec:
+      containers:
+      - env:
+        - name: KONG_LICENSE_DATA
+          valueFrom:
+            secretKeyRef:
+              key: license
+              name: kong-enterprise-license
+        - name: KONG_ADMIN_API_URI
+          value: set-me
+        - name: KONG_ADMIN_GUI_AUTH
+          value: basic-auth
+        - name: KONG_ENFORCE_RBAC
+          value: "on"
+        - name: KONG_ADMIN_GUI_SESSION_CONF
+          value: '{"cookie_secure":false,"storage":"kong","cookie_name":"admin_session","cookie_lifetime":31557600,"cookie_samesite":"off","secret":"please-change-me"}'
+        - name: KONG_ADMIN_LISTEN
+          value: 0.0.0.0:8001, 0.0.0.0:8444 ssl
+        - name: KONG_DATABASE
+          value: postgres
+        - name: KONG_PG_HOST
+          value: postgres
+        - name: KONG_PG_PASSWORD
+          value: kong
+        - name: KONG_PROXY_LISTEN
+          value: 0.0.0.0:8000, 0.0.0.0:8443 ssl http2
+        - name: KONG_PORT_MAPS
+          value: 80:8000, 443:8443
+        - name: KONG_STATUS_LISTEN
+          value: 0.0.0.0:8100
+        - name: KONG_NGINX_WORKER_PROCESSES
+          value: "2"
+        - name: KONG_KIC
+          value: "on"
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_ADMIN_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_PROXY_ERROR_LOG
+          value: /dev/stderr
+        image: kong/kong-gateway:2.7
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - kong quit
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /status
+            port: 8100
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: proxy
+        ports:
+        - containerPort: 8001
+          name: admin
+          protocol: TCP
+        - containerPort: 8002
+          name: manager
+          protocol: TCP
+        - containerPort: 8000
+          name: proxy
+          protocol: TCP
+        - containerPort: 8443
+          name: proxy-ssl
+          protocol: TCP
+        - containerPort: 8100
+          name: metrics
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /status
+            port: 8100
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+      - env:
+        - name: CONTROLLER_KONG_ADMIN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: kong-enterprise-superuser-password
+        - name: CONTROLLER_KONG_ADMIN_URL
+          value: https://127.0.0.1:8444
+        - name: CONTROLLER_KONG_ADMIN_TLS_SKIP_VERIFY
+          value: "true"
+        - name: CONTROLLER_PUBLISH_SERVICE
+          value: kong/kong-proxy
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: kong/kong-portal-controller:2.2.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10254
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: ingress-controller
+        ports:
+        - containerPort: 8080
+          name: webhook
+          protocol: TCP
+        - containerPort: 10255
+          name: cmetrics
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /readyz
+            port: 10254
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+      imagePullSecrets:
+      - name: kong-enterprise-edition-docker
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - while true; do kong migrations list; if [[ 0 -eq $? ]]; then exit 0; fi;
+          sleep 2;  done;
+        env:
+        - name: KONG_LICENSE_DATA
+          valueFrom:
+            secretKeyRef:
+              key: license
+              name: kong-enterprise-license
+        - name: KONG_PG_HOST
+          value: postgres
+        - name: KONG_PG_PASSWORD
+          value: kong
+        image: kong/kong-gateway:2.7
+        name: wait-for-migrations
+      serviceAccountName: kong-serviceaccount
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: kong
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  serviceName: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - env:
+        - name: POSTGRES_USER
+          value: kong
+        - name: POSTGRES_PASSWORD
+          value: kong
+        - name: POSTGRES_DB
+          value: kong
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        image: postgres:9.5
+        name: postgres
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: datadir
+          subPath: pgdata
+      terminationGracePeriodSeconds: 60
+  volumeClaimTemplates:
+  - metadata:
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-migrations
+  namespace: kong
+spec:
+  template:
+    metadata:
+      name: kong-migrations
+    spec:
+      containers:
+      - command:
+        - /bin/sh
+        - -c
+        - kong migrations bootstrap
+        env:
+        - name: KONG_LICENSE_DATA
+          valueFrom:
+            secretKeyRef:
+              key: license
+              name: kong-enterprise-license
+        - name: KONG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: kong-enterprise-superuser-password
+        - name: KONG_PG_PASSWORD
+          value: kong
+        - name: KONG_PG_HOST
+          value: postgres
+        - name: KONG_PG_PORT
+          value: "5432"
+        image: kong/kong-gateway:2.7
+        name: kong-migrations
+      imagePullSecrets:
+      - name: kong-enterprise-edition-docker
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - until nc -zv $KONG_PG_HOST $KONG_PG_PORT -w1; do echo 'waiting for db';
+          sleep 1; done
+        env:
+        - name: KONG_PG_HOST
+          value: postgres
+        - name: KONG_PG_PORT
+          value: "5432"
+        image: busybox
+        name: wait-for-postgres
+      restartPolicy: OnFailure

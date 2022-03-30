@@ -1,0 +1,28 @@
+domain: kong.com
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: kong-portal-controller
+repo: kong-portal-controller
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kong.com
+  group: developer
+  kind: Documentation
+  path: kong-portal-controller/pkg/apis/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: kong.com
+  group: developer
+  kind: API
+  path: kong-portal-controller/pkg/apis/v1
+  version: v1
+version: "3"

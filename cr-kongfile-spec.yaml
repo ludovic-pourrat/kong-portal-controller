@@ -1,0 +1,19 @@
+apiVersion: developer.konghq.com/v1
+kind: KongFile
+metadata:
+  name: my-kong-file-spec
+  annotations:
+    developer.konghq.com/controller.class: kong
+spec:
+  path: test/specs
+  name: test.yaml
+  kind: SPECIFICATION
+  content: |
+    asyncapi: 2.0.0
+    info:
+      title: Test
+      description: Provides services related to test
+      version: v1.0.0
+      x-audience: public
+      x-context-path: '/test/'
+      x-api-path: '/'

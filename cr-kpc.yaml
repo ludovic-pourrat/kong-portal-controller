@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kong-portal-controller-cluster-role
+rules:
+  - apiGroups:
+      - developer.konghq.com
+    resources:
+      - kongfiles
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - developer.konghq.com
+    resources:
+      - kongfiles/status
+    verbs:
+      - get
+      - patch
+      - update
